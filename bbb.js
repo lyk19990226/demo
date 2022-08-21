@@ -4,4 +4,6 @@ console.log('44444')
 console.log('555')
 console.log('77777')
 console.log('66666')
+console.log('999999
+')
 console.log('88888')
