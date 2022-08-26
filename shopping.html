@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<style>
+  table {
+    display: inline-block;
+    border-collapse: collapse;
+    text-align: center;
+  }
+
+  table caption {
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 20px;
+  }
+
+  table thead {
+    background-color: rgb(232, 232, 232);
+  }
+
+  table td,
+  table th {
+    border: 1px solid rgb(184, 182, 182);
+    padding: 10px 16px;
+  }
+
+  .books {
+    display: flex;
+    margin: 50px 0;
+  }
+
+
+  .add-book {
+    width: 620px;
+    box-sizing: border-box;
+    margin-left: 150px;
+    padding: 40px 60px 28px;
+    border: 2px solid rgb(198, 198, 198);
+  }
+
+  .add-book-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    text-align: center;
+  }
+
+  .add-book .item {
+    width: 520px;
+  }
+
+  .add-book .item span {
+    display: inline-block;
+    width: 78px;
+    font-size: 18px;
+    margin-right: 9px;
+    color: rgb(98, 97, 97)
+  }
+
+  .add-book .item input {
+    outline: none;
+    height: 30px;
+    width: 200px;
+    margin: 12px 0 6px;
+    padding: 2px 8px;
+    border: 2px solid rgb(8, 8, 8);
+    border-radius: 5px;
+  }
+
+  .add-book .item-btn input {
+    background-color: rgb(69, 188, 239);
+    color: aliceblue;
+    font-size: 20px;
+    width: 160px;
+    height: 40px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 2px 4px 6px 1px rgba(178, 179, 180, 0.8);
+  }
+
+  .add-book .item-btn input:hover {
+    background-color: rgb(19, 180, 249);
+  }
+
+  .add-book span.tips {
+    width: auto;
+    font-size: 16px;
+    color: red;
+    margin-left: 12px;
+  }
+
+  .books-shopping,
+  .books-list {
+    min-width: 660px;
+  }
+
+  .books-shopping .total {
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  .books-shopping-tips {
+    color: red;
+  }
+
+  .active {
+    background-color: pink;
+  }
+</style>
+
+<body>
+  <div id="app">
+    <!-- 添加商品，展示商品 -->
+    <div class="books">
+      <!-- 商品展示 -->
+      <table class="books-list">
+        <caption>书籍列表</caption>
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>书籍名称</th>
+            <th>库存数量</th>
+            <th>价格</th>
+            <th>加入购物车</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(item,index) in books">
+            <td>{{index}}</td>
+            <td>{{item.name}}</td>
+            <td>{{item.inventory}}件</td>
+            <td>￥{{priceToFixed(item.price)}}</td>
+            <td>
+              <button @click="addShopping(item)" :disabled="item.count === item.inventory">加入购物车</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <!-- 添加商品 -->
+      <div class="add-book">
+        <div class="add-book-title">添加书籍商品</div>
+        <div class="item">
+          <label for="name">
+            <span>书籍名称:</span>
+            <input type="text" id="name" placeholder="请输入该商品名称" v-model.lazy="book.name">
+            <span class="tips" v-show="!book.name.length">{{bookMessage.name}}</span>
+          </label>
+        </div>
+        <div class="item">
+          <label for="inventory">
+            <span>库存:</span>
+            <input type="text" id="inventory" placeholder="请输入该商品库存数量" v-model.lazy="book.inventory">
+            <span class="tips" v-show="isMessageInventory || !book.inventory.length">{{bookMessage.inventory}}</span>
+          </label>
+        </div>
+        <div class="item">
+          <label for="date">
+            <span>出版日期:</span>
+            <input type="text" id="date" placeholder="请输入该商品出版日期" v-model.lazy="book.date">
+            <span class="tips" v-show="isMessageDate || !book.date.length">{{bookMessage.date}}</span>
+          </label>
+        </div>
+        <div class="item">
+          <label for="price">
+            <span>价格:</span>
+            <input type="text" id="price" placeholder="请输入该商品价格" v-model.lazy="book.price">
+            <span class="tips" v-show="isMessagePrice || !book.price.length">{{bookMessage.price}}</span>
+          </label>
+        </div>
+        <div class="item item-btn">
+          <input type="submit" @click="addBook">
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- 购物车 -->
+    <table class="books-shopping">
+
+      <caption>购物车</caption>
+      <thead>
+        <tr>
+          <th>序号</th>
+          <th>书籍名称</th>
+          <th>出版日期</th>
+          <th>价格</th>
+          <th>购买数量</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(item,index) in shopping" :key="item.id" :class="{active:index === currentIndex}"
+          @mouseenter="activeAdd(index)">
+          <td>{{index+1}}</td>
+          <td>{{item.name}}</td>
+          <td>{{item.date}}</td>
+          <td>￥{{priceToFixed(item.price)}}</td>
+          <td>
+            <button @click="increment(index)" :disabled="item.count === 1">-</button>
+            {{item.count}}
+            <button @click="decrement(index)" :disabled="item.count === item.inventory">+</button>
+          </td>
+          <td>
+            <button @click="remove(index,item)">移除</button>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="6" class="books-shopping-tips" v-show="!shopping.length">购物车为空！</td>
+        </tr>
+        <tr>
+          <td class="total" colspan="6">总价:{{total}}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <script src="./vue.js"></script>
+  <script type="text/javascript">
+    Vue.createApp({
+      data() {
+        return {
+          books: [{
+            id: 101435435,
+            name: '《算法导论》',
+            date: '2006-09',
+            price: 85.00,
+            inventory: 201
+          },
+          {
+            id: 101344354,
+            name: '《UNIX编程艺术》',
+            date: '2006-02',
+            price: 59.00,
+            inventory: 20
+          },
+          {
+            id: 101895688,
+            name: '《编程珠玑》',
+            date: '2008-10',
+            price: 39.00,
+            inventory: 99
+          },
+          {
+            id: 101793568,
+            name: '《代码大全》',
+            date: '2006-03',
+            price: 128.00,
+            inventory: 52
+          }],
+          shopping: [],
+          book: {//记录输入框中输入的内容
+            name: "",
+            inventory: "",
+            date: "",
+            price: ""
+          },
+          bookMessage: {//错误提示信息
+            name: "",
+            inventory: "",
+            date: "",
+            price: ""
+          },
+          currentIndex: 0,//购物车中：选中行的样式切换
+          isMessageInventory: true,
+          isMessageDate: true,
+          isMessagePrice: true
+        }
+      },
+      watch: {
+        'book.inventory': function () {
+          this.formVerify(/^[0-9]{1,}$/g, this.book.inventory, "请输入数字", 'inventory', 'isMessageInventory')
+        },
+        'book.date': {
+          handler() {
+            this.formVerify(/^[0-9]{4}\-[0-9]{2}$/g, this.book.date, "请输入日期格式:yyyy-MM", 'date', 'isMessageDate')
+          }
+        },
+        'book.price': function () {
+          this.formVerify(/^[0-9]{1,}(\.[0-9]{1,})?$/g, this.book.price, "请输入数字", 'price', 'isMessagePrice')
+        }
+      },
+      methods: {
+        remove(index, item) {
+          this.shopping.splice(index, 1)
+          delete item.count
+          console.log(item)
+        },
+        decrement(index) {
+          this.shopping[index].count++
+          console.log(this.shopping)
+        },
+        increment(index) {
+          this.shopping[index].count--
+        },
+        priceToFixed(value) {
+          return Number(value).toFixed(2)
+        },
+        activeAdd(index) {
+          this.currentIndex = index
+        },
+        addShopping(book) {
+          if (this.shopping.includes(book)) {
+            this.shopping[this.shopping.findIndex(item => item.id === book.id)].count++
+            return
+          }
+          book.count = 1
+          this.shopping.push(book)
+          console.log(book)
+        },
+        addBook() {
+          const bookKeys = Object.keys(this.book)
+
+          const keys = bookKeys.filter(item => this.book[item] === "")
+          keys.map(key => this.bookMessage[key] = "该为必填项")
+
+          // if (!/^[0-9]{1,}$/g.test(this.book.inventory) && this.book.inventory.length) {
+          //   this.bookMessage.inventory = "请输入数字"
+          //   this.isMessageInventory = true
+          // } else {
+          //   this.isMessageInventory = false
+          // }
+
+          // if (!/^[0-9]{1,}(\.[0-9]{1,})?$/g.test(this.book.price) && this.book.price.length) {
+          //   this.bookMessage.price = "请输入数字"
+          //   this.isMessagePrice = true
+          // } else {
+          //   this.isMessagePrice = false
+          // }
+
+          // if (!/^[0-9]{4}\-[0-9]{2}$/g.test(this.book.date) && this.book.date.length) {
+          //   this.bookMessage.date = "请输入日期格式:yyyy-MM"
+          //   this.isMessageDate = true
+          // } else {
+          //   this.isMessageDate = false
+          // }
+          // 封装后的代码
+          // this.formVerify(/^[0-9]{1,}$/g,this.book.inventory,"请输入数字",'inventory','isMessageInventory')
+          // this.formVerify(/^[0-9]{1,}(\.[0-9]{1,})?$/g, this.book.price, "请输入数字", 'price', 'isMessagePrice')
+          // this.formVerify(/^[0-9]{4}\-[0-9]{2}$/g, this.book.date, "请输入日期格式:yyyy-MM", 'date', 'isMessageDate')
+          if (keys.length > 0 || this.isMessageInventory || this.isMessageDate || this.isMessagePrice) return
+
+          this.book.id = 101000000 + Math.floor(1000000 * Math.random())
+          this.book.inventory = Number(this.book.inventory)
+          this.book.name = `《${this.book.name}》`
+
+          this.books.push(JSON.parse(JSON.stringify(this.book)))
+          bookKeys.map(item => this.book[item] = "")
+          bookKeys.map(key => this.bookMessage[key] = "")
+          delete this.book.id
+        },
+        formVerify(regexp, value, message, attr, isMessage) {
+          if (!regexp.test(value) && value.length) {
+            this.bookMessage[attr] = message
+            this[isMessage] = true
+          } else {
+            this[isMessage] = false
+          }
+        }
+      },
+      computed: {
+        total() {
+          // return this.books.reduce((preValue,curValue) =>  preValue + curValue.price * curValue.count,0)
+          if (!this.shopping.length) return 0
+          return "￥" + this.shopping.map(item => item.price * item.count).reduce((preValue, curValue) => preValue + curValue).toFixed(2)
+        }
+      }
+    }).mount("#app")
+  </script>
+</body>
+
+
+
+</html>
